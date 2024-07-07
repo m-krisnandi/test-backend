@@ -7,7 +7,7 @@ const router = Router();
 router.post('/categories', validateCategory, create);
 router.get('/categories', findAll);
 router.get('/categories/:id', findOne);
-router.put('/categories/:id', update)
+router.put('/categories/:id', validateCategory, update)
 router.delete('/categories/:id', destroy)
 
 export default router;
