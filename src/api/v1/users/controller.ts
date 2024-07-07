@@ -31,7 +31,7 @@ const findAll = async (req: Request, res: Response, next: NextFunction) => {
 const findOne = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await getUserById(req);
-        sendResponse(res, StatusCodes.CREATED, true, result, 'Get User By Id')
+        sendResponse(res, StatusCodes.OK, true, result, 'Get User By Id')
     } catch (error) {
         next(error)
     }
@@ -46,7 +46,7 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
         }
 
         const result = await updateUser(req);
-        sendResponse(res, StatusCodes.CREATED, true, result, 'User updated successfully')
+        sendResponse(res, StatusCodes.OK, true, result, 'User updated successfully')
     } catch (error) {
         next(error)
     }
@@ -55,7 +55,7 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
 const destroy = async (req: Request, res: Response, next: NextFunction) => {
     try {
         await deleteUser(req);
-        sendResponse(res, StatusCodes.CREATED, true, {}, 'User deleted successfully')
+        sendResponse(res, StatusCodes.OK, true, {}, 'User deleted successfully')
     } catch (error) {
         next(error)
     }

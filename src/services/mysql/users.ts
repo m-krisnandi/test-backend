@@ -4,7 +4,7 @@ import argon2 from 'argon2'
 import db from '../../db';
 import { BadRequestError, NotFoundError } from '../../errors';
 import { RowDataPacket } from 'mysql2';
-import User from '../../api/v1/users/model'
+import { User } from '../../api/v1/users/model'
 
 // Create a new User
 const createUser = async (req: Request): Promise<User> => {

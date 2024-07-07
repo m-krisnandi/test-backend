@@ -31,7 +31,7 @@ const findAll = async (req: Request, res: Response, next: NextFunction) => {
 const findOne = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await getCategoryById(req);
-        sendResponse(res, StatusCodes.CREATED, true, result, 'Get Category By Id')
+        sendResponse(res, StatusCodes.OK, true, result, 'Get Category By Id')
     } catch (error) {
         next(error)
     }
@@ -46,7 +46,7 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
         }
 
         const result = await updateCategory(req);
-        sendResponse(res, StatusCodes.CREATED, true, result, 'Category updated successfully')
+        sendResponse(res, StatusCodes.OK, true, result, 'Category updated successfully')
     } catch (error) {
         next(error)
     }
@@ -55,7 +55,7 @@ const update = async (req: Request, res: Response, next: NextFunction) => {
 const destroy = async (req: Request, res: Response, next: NextFunction) => {
     try {
         await deleteCategory(req);
-        sendResponse(res, StatusCodes.CREATED, true, {}, 'Category deleted successfully')
+        sendResponse(res, StatusCodes.OK, true, {}, 'Category deleted successfully')
     } catch (error) {
         next(error)
     }

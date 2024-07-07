@@ -7,4 +7,8 @@ interface User {
     updated_at: Date;
 }
 
-export default User;
+interface SigninResponse {
+    token: string;
+}
+
+export { User, SigninResponse };
