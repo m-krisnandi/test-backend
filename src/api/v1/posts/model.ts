@@ -9,6 +9,12 @@ interface Post {
     image_url: string;
     created_at: string;
     updated_at: string;
-  }
+}
 
-export default Post;
+interface ExternalPost {
+    id: number;
+    title: string;
+    body: string;
+}
+
+export { Post, ExternalPost};

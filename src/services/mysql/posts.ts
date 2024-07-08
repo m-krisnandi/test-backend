@@ -3,8 +3,9 @@ import { v7 as uuidv7 } from 'uuid';
 import db from '../../db';
 import { BadRequestError, NotFoundError } from '../../errors';
 import { RowDataPacket } from 'mysql2';
-import Post from '../../api/v1/posts/model'
+import { Post, ExternalPost } from '../../api/v1/posts/model'
 import { PoolConnection } from 'mysql2/promise';
+import axios from 'axios';
 
 // Create a new Post
 const createPost = async (req: Request): Promise<Post> => {
@@ -69,66 +70,131 @@ const createPost = async (req: Request): Promise<Post> => {
     }
 };
 
-// Get all posts
+const fetchExternalData = async (url: string) => {
+    try {
+        const response = await axios.get(url);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        throw error;
+    }
+};
+
 const getAllPosts = async (): Promise<Post[]> => {
+    let postsFromDB: Post[] = [];
+    let postsFromExternal: Post[] = [];
+
+    // Fetch data from database
     const query = `
-    SELECT p.id, p.title, p.content, p.image_url, p.created_at,
-        p.updated_at, c.id AS category_id, c.name AS category_name
-    FROM posts p
-    LEFT JOIN categories c ON p.category_id = c.id
+        SELECT p.id, p.title, p.content, p.image_url, p.created_at,
+            p.updated_at, c.id AS category_id, c.name AS category_name
+        FROM posts p
+        LEFT JOIN categories c ON p.category_id = c.id
     `;
     const [rows] = await db.query<RowDataPacket[]>(query);
     
-    return rows.map(row => ({
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        category: {
-            id: row.category_id,
-            name: row.category_name,
-        },
-        image_url: row.image_url,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    })) as Post[];
-};
-
-// Get one post by ID
-const getPostById = async (req: Request, connection?: PoolConnection): Promise<Post> => {
-    const { id } = req.params; // Extract id from request parameters
-
-    const query = `
-    SELECT p.id, p.title, p.content, p.image_url, p.created_at,
-        p.updated_at, c.id AS category_id, c.name AS category_name
-    FROM posts p
-    LEFT JOIN categories c ON p.category_id = c.id
-    WHERE p.id = ?
-    `;
-
-    const [rows] = connection
-        ? await connection.query<RowDataPacket[]>(query, [id])
-        : await db.query<RowDataPacket[]>(query, [id]);
-
-    if (rows.length === 0) {
-        throw new NotFoundError('Post not found');
+    if (rows.length > 0) {
+        postsFromDB = rows.map(row => ({
+            id: row.id, 
+            title: row.title,
+            content: row.content,
+            category: {
+                id: row.category_id,
+                name: row.category_name,
+            },
+            image_url: row.image_url,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        }));
     }
 
-    const row = rows[0];
-    const post: Post = {
-        id: row.id,
-        title: row.title,
-        content: row.content,
-        category: {
-            id: row.category_id,
-            name: row.category_name,
-        },
-        image_url: row.image_url,
-        created_at: row.created_at,
-        updated_at: row.updated_at,
-    };
+    // Fetch data from external API
+    const externalDataUrl = 'https://jsonplaceholder.typicode.com/posts';
+    const externalData: ExternalPost[] = await fetchExternalData(externalDataUrl);
 
-    return post;
+    // Map external data to Post format
+    postsFromExternal = externalData.map(data => ({
+        id: data.id.toString(), 
+        title: data.title,
+        content: data.body,
+        category: {
+            id: "0", 
+            name: "Default Category", 
+        },
+        image_url: '', 
+        created_at: new Date().toISOString(), 
+        updated_at: new Date().toISOString(), 
+    }));
+
+    // Combine posts from database and external data
+    const combinedPosts: Post[] = [...postsFromDB, ...postsFromExternal];
+
+    return combinedPosts;
 };
+
+const getPostById = async (req: Request, connection?: PoolConnection): Promise<Post> => {
+    const { id } = req.params;
+
+    const query = `
+        SELECT p.id, p.title, p.content, p.image_url, p.created_at,
+            p.updated_at, c.id AS category_id, c.name AS category_name
+        FROM posts p
+        LEFT JOIN categories c ON p.category_id = c.id
+        WHERE p.id = ?
+    `;
+
+    try {
+        const [rows] = connection
+            ? await connection.query<RowDataPacket[]>(query, [id])
+            : await db.query<RowDataPacket[]>(query, [id]);
+
+        // fetch from external API
+        if (rows.length === 0) {
+            const externalDataUrl = `https://jsonplaceholder.typicode.com/posts/${id}`;
+            const externalData: ExternalPost = await fetchExternalData(externalDataUrl);
+
+            // Construct post object from external data
+            const post: Post = {
+                id: externalData.id.toString(), 
+                title: externalData.title,
+                content: externalData.body,
+                category: {
+                    id: "0", 
+                    name: "Default Category", 
+                },
+                image_url: '', 
+                created_at: new Date().toISOString(), 
+                updated_at: new Date().toISOString(), 
+            };
+
+            return post;
+        }
+
+        // database query result
+        const row = rows[0];
+        const post: Post = {
+            id: row.id,
+            title: row.title,
+            content: row.content,
+            category: {
+                id: row.category_id,
+                name: row.category_name,
+            },
+            image_url: row.image_url,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        };
+
+        return post;
+    } catch (error) {
+        if (error instanceof NotFoundError) {
+            throw error; 
+        }
+
+        throw new Error('Failed to fetch post');
+    }
+};
+
 
 
 // Update post by ID
