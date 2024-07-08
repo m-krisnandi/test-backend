@@ -3,8 +3,10 @@ interface User {
     name: string;
     email: string;
     password: string;
-    created_at: Date;
-    updated_at: Date;
+    address: string;
+    mobile_phone: string;
+    created_at: string;
+    updated_at: string;
 }
 
 interface SigninResponse {

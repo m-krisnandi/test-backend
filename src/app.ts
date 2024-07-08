@@ -7,7 +7,9 @@ import compression from 'compression'
 import cors from 'cors'
 import path from 'path';
 
-import { createCategoriesTable, createPostsTable, createUsersTable } from './tables'
+import { 
+    createCategoriesTable, createPostsTable, 
+    createUserDetailTable, createUsersTable } from './tables'
 
 import categoriesRouter from './api/v1/categories/router'
 import usersRouter from './api/v1/users/router'
@@ -31,6 +33,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // Create Table if does'n exists
 createCategoriesTable();
 createUsersTable();
+createUserDetailTable();
 createPostsTable();
 
 // Router
